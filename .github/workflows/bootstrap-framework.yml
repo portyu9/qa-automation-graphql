@@ -50,15 +50,15 @@ jobs:
           npm run manifest:refresh
           npm run manifest:check
           npm audit --audit-level=high
-      - name: Commit qualified framework and remove bootstrap
+      - name: Commit qualified non-workflow framework content
         shell: bash
         run: |
           set -euo pipefail
           rm -rf .bootstrap
-          rm -f .github/workflows/bootstrap-framework.yml
-          rm -f .github/workflows/lock-bootstrap.yml
+          rm -f repo.tar.gz
+          git checkout HEAD -- .github/workflows
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -A
-          git commit -m 'build: qualify production GraphQL framework'
+          git commit -m 'build: qualify production GraphQL framework content'
           git push origin HEAD:build/production-graphql-framework

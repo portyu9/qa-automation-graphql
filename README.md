@@ -5,10 +5,10 @@
 [![Docs](https://github.com/portyu9/qa-automation-graphql/actions/workflows/docs.yml/badge.svg)](https://github.com/portyu9/qa-automation-graphql/actions/workflows/docs.yml)
 [![Live Smoke](https://github.com/portyu9/qa-automation-graphql/actions/workflows/live-smoke.yml/badge.svg)](https://github.com/portyu9/qa-automation-graphql/actions/workflows/live-smoke.yml)
 
-[![GraphQL.js](https://img.shields.io/badge/GraphQL.js-17.0.2-E10098?logo=graphql&logoColor=white)](https://www.graphql-js.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-7.0.2-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vitest](https://img.shields.io/badge/Vitest-4.1.11-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-24.20.0_LTS-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![GraphQL.js](https://img.shields.io/badge/GraphQL.js-graphql-E10098?logo=graphql&logoColor=white)](https://www.graphql-js.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-language-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vitest](https://img.shields.io/badge/Vitest-testing-6E9F18?logo=vitest&logoColor=white)](https://vitest.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-runtime-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Schema SHA--256](https://img.shields.io/badge/Schema-SHA--256-6A5ACD)](docs/schema-evolution.md)
 [![Persisted Operations](https://img.shields.io/badge/Persisted%20Operations-governed-C2410C)](docs/graphql-testing.md)
 [![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-CI-2088FF?logo=githubactions&logoColor=white)](https://github.com/features/actions)
@@ -34,7 +34,7 @@ A TypeScript GraphQL quality-engineering framework for **schema contracts, execu
 | Persisted operations | Named operation documents remain bound to committed SHA-256 identities | Manifest generation/check | Committed operation manifest |
 | HTTP transport | Network, HTTP, malformed protocol, GraphQL execution and redaction boundaries | Loopback HTTP server | Integration assertions |
 | Evidence contract | Intended 23 deterministic tests executed with governed coverage | Vitest JUnit + V8 coverage validators | JUnit + coverage evidence |
-| Runtime compatibility | Primary Node 24 qualification remains compatible with Node 22 | Separate CI lanes | Stable `ci-gate` |
+| Runtime compatibility | Primary Node qualification remains compatible with additional Node runtime | Separate CI lanes | Stable `ci-gate` |
 | Security | Source, advisory, repository/dependency/configuration/secret and PR dependency-change signals | CodeQL + npm Audit + Trivy + Dependency Review when available | Stable `security-gate` |
 | Live endpoint | Explicit external endpoint connectivity/query boundary | Manual/opt-in workflow | Live-smoke conclusion |
 
@@ -101,14 +101,14 @@ The architecture separates canonical contracts from runtime and transport concer
 | Determinism | Required CI owns an in-memory/loopback service; public GraphQL services are not framework-health dependencies. |
 | Live endpoints | External smoke requires explicit opt-in and environment configuration and is not represented as pull-request deterministic coverage. |
 | Test evidence | A passing command is insufficient; JUnit identity/count and coverage evidence are validated after execution. |
-| Runtime support | Node 24 is the primary qualification line and Node 22 is an explicit compatibility line. |
+| Runtime support | primary Node runtime is the primary qualification line and additional Node runtime is an explicit compatibility line. |
 | Supply chain | Actions are immutable-pinned; CodeQL, npm Audit, Trivy, and Dependency Review remain separate controls. |
 
 ## Toolchain
 
 | Component | Qualified version / policy |
 | --- | --- |
-| Node.js | 24.20.0 primary; Node 22 compatibility lane |
+| Node.js | 24.20.0 primary; additional Node compatibility lane |
 | npm | 11.19.1 |
 | GraphQL.js | 17.0.2 |
 | TypeScript | 7.0.2 with strict contracts including `exactOptionalPropertyTypes` |
@@ -207,7 +207,7 @@ See [Live endpoint](docs/live-endpoint.md).
 
 The stable repository-facing conclusions are `CI / ci-gate`, `docs / docs-contract`, and `Security / security-gate`.
 
-- `ci.yml` — repository/docs/workflow-pin policy, strict types, 23-test deterministic execution, V8 coverage evidence, exact JUnit identity validation, schema fingerprint check, operation-manifest check, and Node 22 compatibility.
+- `ci.yml` — repository/docs/workflow-pin policy, strict types, 23-test deterministic execution, V8 coverage evidence, exact JUnit identity validation, schema fingerprint check, operation-manifest check, and additional Node compatibility.
 - `docs.yml` — README structure, Mermaid, workflow badges, directory map, and documentation-reference contracts.
 - `security.yml` — immutable Action policy, CodeQL JavaScript/TypeScript analysis, HIGH/CRITICAL npm Audit, attributed Trivy scanning, conditional pull-request Dependency Review, and stable aggregation.
 - `live-smoke.yml` — explicit externally configured endpoint boundary only.
@@ -256,7 +256,7 @@ Root files own runtime/toolchain pins, dependency reproducibility, Vitest/TypeSc
 | Transport failure | Network, HTTP, protocol-shape, or GraphQL error-classification boundary. |
 | JUnit evidence failure | The intended governed tests were not proven to have executed exactly as expected. |
 | Coverage evidence failure | Instrumented framework surface dropped below governed floors or evidence is absent. |
-| Node 22-only failure | Runtime compatibility drift distinct from Node 24 primary qualification. |
+| additional Node runtime-only failure | Runtime compatibility drift distinct from primary Node runtime primary qualification. |
 | Live-smoke failure | External endpoint/configuration/service issue, not automatically a deterministic framework regression. |
 | npm Audit / Trivy / CodeQL failure | Independent dependency, repository, or source-security signal. |
 

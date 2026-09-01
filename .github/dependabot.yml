@@ -11,10 +11,13 @@ updates:
     groups:
       graphql-runtime:
         patterns: ["graphql"]
+        update-types: ["minor", "patch"]
       test-tooling:
         patterns: ["vitest", "@vitest/*"]
+        update-types: ["minor", "patch"]
       typescript-tooling:
         patterns: ["typescript", "@types/*"]
+        update-types: ["minor", "patch"]
     commit-message:
       prefix: "deps"
       include: "scope"

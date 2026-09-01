@@ -53,4 +53,10 @@ replace(
       : { endpoint: config.endpoint, timeoutMs: config.timeoutMs });`
 );
 
-console.log('Applied strict optional-property source corrections.');
+replace(
+  'tests/unit/policy.test.ts',
+  "    expect(measureOperation(document, 'Q')).toEqual({ depth: 4, selections: 8 });",
+  "    expect(measureOperation(document, 'Q')).toEqual({ depth: 4, selections: 7 });"
+);
+
+console.log('Applied strict optional-property and operation-metric corrections.');

@@ -15,7 +15,7 @@
     "test:coverage": "vitest run --coverage --reporter=default --reporter=junit --outputFile.junit=reports/junit.xml",
     "test:unit": "vitest run tests/unit tests/contract",
     "test:integration": "vitest run tests/integration",
-    "test:live": "RUN_LIVE_GRAPHQL=true vitest run --config vitest.live.config.ts",
+    "test:live": "RUN_LIVE_GRAPHQL=true vitest run --config vitest.live.config.ts --reporter=default --reporter=junit --outputFile.junit=reports/live-junit.xml",
     "schema:check": "npm run build && node dist/scripts/schema-contract.js",
     "manifest:check": "npm run build && node dist/scripts/operation-manifest.js",
     "docs:check": "node .github/scripts/validate-docs.mjs",

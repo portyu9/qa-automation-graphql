@@ -28,7 +28,9 @@ jobs:
           tar -xzf /tmp/graphql-framework/repo.tar.gz -C /tmp/graphql-framework
           cp -a /tmp/graphql-framework/. .
       - name: Apply hardened source and evidence corrections
-        run: node .bootstrap/apply-fixes.mjs
+        run: |
+          node .bootstrap/apply-fixes.mjs
+          node .bootstrap/apply-governance-fixes.mjs
       - name: Resolve and qualify locked graph
         shell: bash
         run: |
@@ -43,7 +45,9 @@ jobs:
           npm run typecheck
           npm run test:coverage
           node .github/scripts/validate-test-evidence.mjs reports/junit.xml reports/coverage/coverage-summary.json
+          npm run schema:refresh
           npm run schema:check
+          npm run manifest:refresh
           npm run manifest:check
           npm audit --audit-level=high
       - name: Commit qualified framework and remove bootstrap

@@ -1,0 +1,14 @@
+query Search($term: String!) {
+  search(term: $term) {
+    __typename
+    ... on User {
+      id
+      name
+    }
+    ... on Product {
+      id
+      name
+      priceCents
+    }
+  }
+}

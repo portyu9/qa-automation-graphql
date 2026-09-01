@@ -1,0 +1,28 @@
+{
+  "operations": [
+    {
+      "name": "Search",
+      "type": "query",
+      "path": "queries/search.graphql",
+      "sha256": "22e74a5c5e2af308de8719050e37cf34a859f323aa488e04716d8cce5e18ed76"
+    },
+    {
+      "name": "UpdateUserRole",
+      "type": "mutation",
+      "path": "mutations/update-user-role.graphql",
+      "sha256": "cae94cdd083592fcbb38523251d4d7c23190db5aa12bab5a9ac4f0f705dc8529"
+    },
+    {
+      "name": "Users",
+      "type": "query",
+      "path": "queries/users.graphql",
+      "sha256": "af7c9e2a7c93766c67149e26cbc8112fdf04dfa7b7962f5758c113acdc6cc1c0"
+    },
+    {
+      "name": "Viewer",
+      "type": "query",
+      "path": "queries/viewer.graphql",
+      "sha256": "e017574e2ca978104cf7a6f171c57b5e87a418cb5684d6e11effb2d47a329b73"
+    }
+  ]
+}

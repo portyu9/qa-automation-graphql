@@ -3,7 +3,7 @@ import re
 
 path = Path('README.md')
 text = path.read_text(encoding='utf-8')
-marker = '## Dependency maintenance\n'
+marker = '## Repository map\n'
 section = '''## Confidence boundaries
 
 GraphQL quality is multi-dimensional: schema shape, operation governance, execution semantics, HTTP transport, persisted identity, authorization policy, and live-environment reachability are related but not interchangeable signals.
@@ -25,7 +25,7 @@ Use the **lowest boundary that can disprove the requirement**. Add the live endp
 '''
 if '## Confidence boundaries\n' not in text:
     if marker not in text:
-        raise SystemExit('Dependency maintenance marker missing')
+        raise SystemExit('Repository map marker missing')
     text = text.replace(marker, section + marker)
 path.write_text(text, encoding='utf-8')
 

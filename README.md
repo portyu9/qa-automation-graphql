@@ -34,7 +34,7 @@ A TypeScript GraphQL quality-engineering framework for **schema contracts, execu
 | Persisted operations | Named operation documents remain bound to committed SHA-256 identities | Manifest generation/check | Committed operation manifest |
 | HTTP transport | Network, HTTP, malformed protocol, GraphQL execution and redaction boundaries | Loopback HTTP server | Integration assertions |
 | Evidence contract | Intended 23 deterministic tests executed with governed coverage | Vitest JUnit + V8 coverage validators | JUnit + coverage evidence |
-| Runtime compatibility | Primary primary Node qualification remains compatible with additional Node runtime | Separate CI lanes | Stable `ci-gate` |
+| Runtime compatibility | Primary Node qualification remains compatible with additional Node runtime | Separate CI lanes | Stable `ci-gate` |
 | Security | Source, advisory, repository/dependency/configuration/secret and PR dependency-change signals | CodeQL + npm Audit + Trivy + Dependency Review when available | Stable `security-gate` |
 | Live endpoint | Explicit external endpoint connectivity/query boundary | Manual/opt-in workflow | Live-smoke conclusion |
 

@@ -1,0 +1,56 @@
+name: bootstrap-framework
+
+on:
+  push:
+    branches: [build/production-graphql-framework]
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: build/production-graphql-framework
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.20.0
+      - name: Materialize framework
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/graphql-framework
+          cat .bootstrap/part-* | base64 --decode > /tmp/graphql-framework/repo.tar.gz
+          tar -xzf /tmp/graphql-framework/repo.tar.gz -C /tmp/graphql-framework
+          cp -a /tmp/graphql-framework/. .
+      - name: Resolve and qualify locked graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global --ignore-scripts "npm@11.19.1"
+          [[ "$(npm --version)" == "11.19.1" ]]
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run repo:check
+          npm run docs:check
+          npm run workflow-pins:check
+          npm run typecheck
+          npm run test
+          npm run schema:check
+          npm run manifest:check
+      - name: Commit qualified framework and remove bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .bootstrap
+          rm -f .github/workflows/bootstrap-framework.yml
+          rm -f .github/workflows/lock-bootstrap.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m 'build: qualify production GraphQL framework'
+          git push origin HEAD:build/production-graphql-framework

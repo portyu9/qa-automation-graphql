@@ -13,7 +13,7 @@ jobs:
         with:
           ref: docs/readme-knowledge
       - run: python3 .github/scripts/apply_readme_knowledge.py
-      - run: node scripts/validate-readme.mjs
+      - run: node .github/scripts/validate-docs.mjs
       - name: Commit reviewed README change
         shell: bash
         run: |

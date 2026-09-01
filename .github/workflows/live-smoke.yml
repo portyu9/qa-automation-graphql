@@ -6,6 +6,9 @@ on:
 permissions:
   contents: read
 
+env:
+  NPM_VERSION: 11.19.1
+
 jobs:
   live-graphql:
     runs-on: ubuntu-24.04
@@ -17,10 +20,24 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm install --global --ignore-scripts "npm@11.19.1"
+      - name: Pin npm runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global --ignore-scripts "npm@${NPM_VERSION}"
+          [[ "$(npm --version)" == "$NPM_VERSION" ]]
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Execute explicit live smoke
         env:
           GRAPHQL_ENDPOINT: ${{ vars.GRAPHQL_ENDPOINT }}
           GRAPHQL_AUTH_TOKEN: ${{ secrets.GRAPHQL_AUTH_TOKEN }}
+          GRAPHQL_AUTH_ALLOWED_HOSTS: ${{ vars.GRAPHQL_AUTH_ALLOWED_HOSTS }}
         run: npm run test:live
+      - name: Upload live-smoke JUnit evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: graphql-live-smoke-${{ github.run_id }}
+          path: reports/live-junit.xml
+          if-no-files-found: error
+          retention-days: 7

@@ -1,0 +1,26 @@
+name: live-smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-graphql:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: graphql-live-smoke
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm install --global --ignore-scripts "npm@11.19.1"
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Execute explicit live smoke
+        env:
+          GRAPHQL_ENDPOINT: ${{ vars.GRAPHQL_ENDPOINT }}
+          GRAPHQL_AUTH_TOKEN: ${{ secrets.GRAPHQL_AUTH_TOKEN }}
+        run: npm run test:live

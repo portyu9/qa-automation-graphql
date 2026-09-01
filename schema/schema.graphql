@@ -1,0 +1,49 @@
+enum Role {
+  USER
+  ADMIN
+}
+
+interface Node {
+  id: ID!
+}
+
+type User implements Node {
+  id: ID!
+  name: String!
+  email: String!
+  role: Role!
+}
+
+type Product implements Node {
+  id: ID!
+  name: String!
+  priceCents: Int!
+}
+
+union SearchResult = User | Product
+
+type PageInfo {
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+type UserEdge {
+  cursor: String!
+  node: User!
+}
+
+type UserConnection {
+  edges: [UserEdge!]!
+  pageInfo: PageInfo!
+}
+
+type Query {
+  viewer: User
+  node(id: ID!): Node
+  users(first: Int = 2, after: String): UserConnection!
+  search(term: String!): [SearchResult!]!
+}
+
+type Mutation {
+  updateUserRole(userId: ID!, role: Role!): User!
+}

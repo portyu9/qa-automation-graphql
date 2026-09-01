@@ -8,9 +8,30 @@ describe('runtime configuration', () => {
     expect(config.timeoutMs).toBe(10_000);
   });
 
-  it('rejects credentials and query components in endpoints', () => {
+  it('rejects unsafe endpoint and credential-routing state', () => {
     expect(() => loadRuntimeConfig({ GRAPHQL_ENDPOINT: 'https://user:pass@example.test/graphql' })).toThrow(/credentials/);
     expect(() => loadRuntimeConfig({ GRAPHQL_ENDPOINT: 'https://example.test/graphql?token=x' })).toThrow(/query or fragment/);
+    expect(() => loadRuntimeConfig({
+      GRAPHQL_ENDPOINT: 'https://api.example.test/graphql',
+      GRAPHQL_AUTH_TOKEN: 'secret-at-runtime'
+    })).toThrow(/GRAPHQL_AUTH_ALLOWED_HOSTS is required/);
+    expect(() => loadRuntimeConfig({
+      GRAPHQL_ENDPOINT: 'https://api.example.test/graphql',
+      GRAPHQL_AUTH_TOKEN: 'secret-at-runtime',
+      GRAPHQL_AUTH_ALLOWED_HOSTS: 'other.example.test'
+    })).toThrow(/not authorized/);
+    expect(() => loadRuntimeConfig({
+      GRAPHQL_ENDPOINT: 'https://api.example.test/graphql',
+      GRAPHQL_AUTH_TOKEN: 'secret-at-runtime',
+      GRAPHQL_AUTH_ALLOWED_HOSTS: 'https://api.example.test'
+    })).toThrow(/hostnames only/);
+
+    const config = loadRuntimeConfig({
+      GRAPHQL_ENDPOINT: 'https://api.example.test/graphql',
+      GRAPHQL_AUTH_TOKEN: 'secret-at-runtime',
+      GRAPHQL_AUTH_ALLOWED_HOSTS: 'api.example.test, backup.example.test'
+    });
+    expect(config.authToken).toBe('secret-at-runtime');
   });
 
   it('validates timeout values', () => {

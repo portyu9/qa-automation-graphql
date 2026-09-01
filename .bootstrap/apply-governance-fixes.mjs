@@ -41,11 +41,11 @@ if (!normalized.includes('interface Node') || !normalized.includes('union Search
 const fingerprint = schemaFingerprint();
 const baselinePath = join(process.cwd(), 'schema', 'schema.sha256');
 if (process.argv.includes('--write')) {
-  writeFileSync(baselinePath, \`${fingerprint}\\n\`);
+  writeFileSync(baselinePath, fingerprint + '\\n');
 } else {
   const expected = readFileSync(baselinePath, 'utf8').trim();
   if (!/^[a-f0-9]{64}$/.test(expected)) throw new Error('Committed schema fingerprint is malformed');
-  if (expected !== fingerprint) throw new Error(\`Schema fingerprint drift: expected \${expected}, received \${fingerprint}\`);
+  if (expected !== fingerprint) throw new Error('Schema fingerprint drift: expected ' + expected + ', received ' + fingerprint);
 }
 console.log(JSON.stringify({ schemaSha256: fingerprint, schemaBytes: Buffer.byteLength(normalized), validationErrors: 0, baseline: 'schema/schema.sha256' }));
 `);
@@ -55,11 +55,11 @@ import { join } from 'node:path';
 import { buildOperationManifest } from '../src/manifest/operations.js';
 
 const manifest = buildOperationManifest();
-if (manifest.length < 4) throw new Error(\`Expected at least 4 governed operations, found \${manifest.length}\`);
+if (manifest.length < 4) throw new Error('Expected at least 4 governed operations, found ' + manifest.length);
 const names = new Set(manifest.map((entry) => entry.name));
 if (names.size !== manifest.length) throw new Error('Operation names must be unique');
 const payload = { operations: manifest };
-const normalized = \`${JSON.stringify(payload, null, 2)}\\n\`;
+const normalized = JSON.stringify(payload, null, 2) + '\\n';
 const baselinePath = join(process.cwd(), 'operations', 'manifest.json');
 if (process.argv.includes('--write')) {
   writeFileSync(baselinePath, normalized);

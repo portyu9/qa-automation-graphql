@@ -20,15 +20,10 @@ for (const fragment of required) {
 
 if (/portfolio/i.test(readme)) throw new Error('README must remain neutral technical documentation');
 
-const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-const versionClaims = [
-  ['GraphQL.js', packageJson.dependencies?.graphql],
-  ['TypeScript', packageJson.devDependencies?.typescript],
-  ['Vitest', packageJson.devDependencies?.vitest],
-];
-for (const [label, version] of versionClaims) {
-  if (!version || !readme.includes(`${label}-${version}`)) {
-    throw new Error(`README ${label} badge/version claim must match package.json (${String(version)})`);
+const technologyBadges = ['GraphQL.js', 'TypeScript', 'Vitest', 'Node.js'];
+for (const label of technologyBadges) {
+  if (!readme.includes(`![${label}]`)) {
+    throw new Error(`README technology badge is missing: ${label}`);
   }
 }
 
@@ -77,5 +72,5 @@ for (const doc of [
 }
 
 console.log(
-  'Documentation contract validated: required sections, package-derived version claims, workflow badges, styled Mermaid architecture, documentation references, and directory-only repository map are consistent.',
+  'Documentation contract validated: required sections, versionless technology badges, workflow badges, styled Mermaid architecture, documentation references, and directory-only repository map are consistent.',
 );

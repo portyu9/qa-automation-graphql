@@ -274,7 +274,7 @@ Root files own runtime/toolchain pins, dependency reproducibility, Vitest/TypeSc
 | Transport failure | Network, HTTP, protocol-shape, or GraphQL error-classification boundary. |
 | JUnit evidence failure | The intended governed tests were not proven to have executed exactly as expected. |
 | Coverage evidence failure | Instrumented framework surface dropped below governed floors or evidence is absent. |
-| additional Node runtime-only failure | Runtime compatibility drift distinct from primary Node runtime primary qualification. |
+| additional Node runtime-only failure | Runtime compatibility drift isolated from the repository-designated primary qualification runtime. |
 | Live-smoke failure | External endpoint/configuration/service issue, not automatically a deterministic framework regression. |
 | npm Audit / Trivy / CodeQL failure | Independent dependency, repository, or source-security signal. |
 

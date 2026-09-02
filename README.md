@@ -170,7 +170,7 @@ Integration tests use the repository-owned loopback server so real serialization
 Install the exact dependency graph and run the same deterministic quality surface used by primary CI:
 
 ```bash
-npm ci
+npm ci --ignore-scripts --no-audit --no-fund
 npm run quality
 ```
 

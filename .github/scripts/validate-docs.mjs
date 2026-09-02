@@ -27,9 +27,13 @@ for (const label of technologyBadges) {
   }
 }
 
-for (const workflow of ['ci.yml', 'security.yml', 'docs.yml', 'live-smoke.yml']) {
+for (const workflow of ['ci.yml', 'security.yml', 'docs.yml']) {
   const badge = `actions/workflows/${workflow}/badge.svg`;
   if (!readme.includes(badge)) throw new Error(`README workflow badge is missing: ${workflow}`);
+}
+
+if (!readme.includes('https://img.shields.io/badge/Live%20Smoke-manual-8250DF') || !readme.includes('actions/workflows/live-smoke.yml')) {
+  throw new Error('README must identify live-smoke as a manual workflow without implying continuous status');
 }
 
 const mermaid = readme.match(/```mermaid\s*\n([\s\S]*?)```/u)?.[1];

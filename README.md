@@ -35,7 +35,7 @@ A TypeScript GraphQL quality-engineering framework for **schema contracts, execu
 | HTTP transport | Network, HTTP, malformed protocol, GraphQL execution and redaction boundaries | Loopback HTTP server | Integration assertions |
 | Evidence contract | Intended 23 deterministic tests executed with governed coverage | Vitest JUnit + V8 coverage validators | JUnit + coverage evidence |
 | Runtime compatibility | Primary Node qualification remains compatible with additional Node runtime | Separate CI lanes | Stable `ci-gate` |
-| Security | Source, advisory, repository/dependency/configuration/secret and PR dependency-change signals | CodeQL + npm Audit + Trivy + Dependency Review when available | Stable `security-gate` |
+| Security | Workflow-policy, source, advisory, repository/dependency/configuration/secret and PR dependency-change signals | Supply-chain policy + CodeQL + npm Audit + Trivy + Dependency Review when available | Stable `security-gate` |
 | Live endpoint | Explicit external endpoint connectivity/query boundary | Manual/opt-in workflow | Live-smoke conclusion |
 
 ## Architecture
@@ -72,7 +72,8 @@ flowchart LR
     CHANGE --> DOCS[README + repository contracts]
     DOCS --> DG[Docs / docs-contract]
 
-    SAST[CodeQL] --> SG[Security / security-gate]
+    SUPPLY[Supply-chain policy] --> SG[Security / security-gate]
+    SAST[CodeQL] --> SG
     AUDIT[npm Audit] --> SG
     TRIVY[Trivy] --> SG
     REVIEW[Dependency Review when available] --> SG
@@ -90,7 +91,7 @@ flowchart LR
     class SDL,OPS,POLICY,SF,MANIFEST,DOCS contract;
     class SCHEMA,EXEC,CODE,CLIENT,LOOP,LIVE,NODE22 runtime;
     class TESTS,EVIDENCE,RESULT evidence;
-    class CIGATE,DG,SAST,AUDIT,TRIVY,REVIEW,SG gate;
+    class CIGATE,DG,SUPPLY,SAST,AUDIT,TRIVY,REVIEW,SG gate;
     linkStyle default stroke:#57606a,stroke-width:1.4px;
 ```
 
@@ -111,7 +112,7 @@ The architecture separates canonical contracts from runtime and transport concer
 | Live endpoints | External smoke requires explicit opt-in and environment configuration and is not represented as pull-request deterministic coverage. |
 | Test evidence | A passing command is insufficient; JUnit identity/count and coverage evidence are validated after execution. |
 | Runtime support | The repository-designated primary Node runtime is the qualification line; the additional supported Node runtime is an explicit compatibility line. |
-| Supply chain | Actions are immutable-pinned; CodeQL, npm Audit, Trivy, and Dependency Review remain separate controls. |
+| Supply chain | Workflow policy, CodeQL, npm Audit, Trivy, and Dependency Review remain separate controls. |
 
 ## Toolchain
 

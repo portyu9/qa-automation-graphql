@@ -101,7 +101,7 @@ The architecture separates canonical contracts from runtime and transport concer
 | Determinism | Required CI owns an in-memory/loopback service; public GraphQL services are not framework-health dependencies. |
 | Live endpoints | External smoke requires explicit opt-in and environment configuration and is not represented as pull-request deterministic coverage. |
 | Test evidence | A passing command is insufficient; JUnit identity/count and coverage evidence are validated after execution. |
-| Runtime support | primary Node runtime is the primary qualification line and additional Node runtime is an explicit compatibility line. |
+| Runtime support | The repository-designated primary Node runtime is the qualification line; the additional supported Node runtime is an explicit compatibility line. |
 | Supply chain | Actions are immutable-pinned; CodeQL, npm Audit, Trivy, and Dependency Review remain separate controls. |
 
 ## Toolchain

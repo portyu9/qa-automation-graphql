@@ -64,13 +64,22 @@ flowchart LR
     MANIFEST --> EVIDENCE
     TESTS --> EVIDENCE
     EVIDENCE --> CIGATE[CI / ci-gate]
+    CHANGE --> NODE22[Node 22 compatibility contracts]
+    NODE22 --> CIGATE
 
-    CLIENT --> LIVE[Explicit live endpoint smoke]
+    CLIENT --> LIVE[Manual live endpoint smoke]
+
+    CHANGE --> DOCS[README + repository contracts]
+    DOCS --> DG[Docs / docs-contract]
 
     SAST[CodeQL] --> SG[Security / security-gate]
     AUDIT[npm Audit] --> SG
     TRIVY[Trivy] --> SG
     REVIEW[Dependency Review when available] --> SG
+
+    CIGATE --> RESULT[Qualified repository change]
+    DG --> RESULT
+    SG --> RESULT
 
     classDef entry fill:#ddf4ff,stroke:#0969da,color:#24292f,stroke-width:1.5px;
     classDef contract fill:#fbefff,stroke:#8250df,color:#24292f,stroke-width:1.5px;
@@ -78,10 +87,10 @@ flowchart LR
     classDef evidence fill:#dafbe1,stroke:#1a7f37,color:#24292f,stroke-width:1.5px;
     classDef gate fill:#ffebe9,stroke:#cf222e,color:#24292f,stroke-width:1.5px;
     class CHANGE entry;
-    class SDL,OPS,POLICY,SF,MANIFEST contract;
-    class SCHEMA,EXEC,CODE,CLIENT,LOOP,LIVE runtime;
-    class TESTS,EVIDENCE evidence;
-    class CIGATE,SAST,AUDIT,TRIVY,REVIEW,SG gate;
+    class SDL,OPS,POLICY,SF,MANIFEST,DOCS contract;
+    class SCHEMA,EXEC,CODE,CLIENT,LOOP,LIVE,NODE22 runtime;
+    class TESTS,EVIDENCE,RESULT evidence;
+    class CIGATE,DG,SAST,AUDIT,TRIVY,REVIEW,SG gate;
     linkStyle default stroke:#57606a,stroke-width:1.4px;
 ```
 

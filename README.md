@@ -1,4 +1,4 @@
-# GraphQL QA Automation Framework
+# GraphQL Quality Engineering Framework
 
 [![CI](https://github.com/portyu9/qa-automation-graphql/actions/workflows/ci.yml/badge.svg)](https://github.com/portyu9/qa-automation-graphql/actions/workflows/ci.yml)
 [![Security](https://github.com/portyu9/qa-automation-graphql/actions/workflows/security.yml/badge.svg)](https://github.com/portyu9/qa-automation-graphql/actions/workflows/security.yml)

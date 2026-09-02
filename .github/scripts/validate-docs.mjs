@@ -2,7 +2,7 @@ import fs from 'node:fs';
 
 const readme = fs.readFileSync('README.md', 'utf8');
 const required = [
-  '# GraphQL QA Automation Framework',
+  '# GraphQL Quality Engineering Framework',
   '## Quality model',
   '## Architecture',
   '## Toolchain',

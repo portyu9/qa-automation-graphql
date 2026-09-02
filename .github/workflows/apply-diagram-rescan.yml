@@ -21,53 +21,19 @@ jobs:
           from pathlib import Path
           p = Path('README.md')
           s = p.read_text(encoding='utf-8')
-          old = '''    TESTS --> EVIDENCE
-    EVIDENCE --> CIGATE[CI / ci-gate]
-
-    CLIENT --> LIVE[Explicit live endpoint smoke]
-
-    SAST[CodeQL] --> SG[Security / security-gate]
-'''
-          new = '''    TESTS --> EVIDENCE
-    EVIDENCE --> CIGATE[CI / ci-gate]
-    CHANGE --> NODE22[Node 22 compatibility contracts]
-    NODE22 --> CIGATE
-
-    CLIENT --> LIVE[Manual live endpoint smoke]
-
-    CHANGE --> DOCS[README + repository contracts]
-    DOCS --> DG[Docs / docs-contract]
-
-    SAST[CodeQL] --> SG[Security / security-gate]
-'''
-          if s.count(old) != 1:
-              raise SystemExit('expected one GraphQL qualification fragment')
-          s = s.replace(old, new, 1)
-          old2 = '''    REVIEW[Dependency Review when available] --> SG
-
-    classDef entry fill:#ddf4ff,stroke:#0969da,color:#24292f,stroke-width:1.5px;
-'''
-          new2 = '''    REVIEW[Dependency Review when available] --> SG
-
-    CIGATE --> RESULT[Qualified repository change]
-    DG --> RESULT
-    SG --> RESULT
-
-    classDef entry fill:#ddf4ff,stroke:#0969da,color:#24292f,stroke-width:1.5px;
-'''
-          if s.count(old2) != 1:
-              raise SystemExit('expected one GraphQL result fragment')
-          s = s.replace(old2, new2, 1)
           replacements = [
+              ('    EVIDENCE --> CIGATE[CI / ci-gate]\n', '    EVIDENCE --> CIGATE[CI / ci-gate]\n    CHANGE --> NODE22[Node 22 compatibility contracts]\n    NODE22 --> CIGATE\n'),
+              ('    CLIENT --> LIVE[Explicit live endpoint smoke]\n', '    CLIENT --> LIVE[Manual live endpoint smoke]\n\n    CHANGE --> DOCS[README + repository contracts]\n    DOCS --> DG[Docs / docs-contract]\n'),
+              ('    REVIEW[Dependency Review when available] --> SG\n', '    REVIEW[Dependency Review when available] --> SG\n\n    CIGATE --> RESULT[Qualified repository change]\n    DG --> RESULT\n    SG --> RESULT\n'),
               ('    class SDL,OPS,POLICY,SF,MANIFEST contract;\n', '    class SDL,OPS,POLICY,SF,MANIFEST,DOCS contract;\n'),
               ('    class SCHEMA,EXEC,CODE,CLIENT,LOOP,LIVE runtime;\n', '    class SCHEMA,EXEC,CODE,CLIENT,LOOP,LIVE,NODE22 runtime;\n'),
               ('    class TESTS,EVIDENCE evidence;\n', '    class TESTS,EVIDENCE,RESULT evidence;\n'),
               ('    class CIGATE,SAST,AUDIT,TRIVY,REVIEW,SG gate;\n', '    class CIGATE,DG,SAST,AUDIT,TRIVY,REVIEW,SG gate;\n'),
           ]
-          for a, b in replacements:
-              if s.count(a) != 1:
-                  raise SystemExit(f'expected one GraphQL class fragment: {a!r}')
-              s = s.replace(a, b, 1)
+          for old, new in replacements:
+              if s.count(old) != 1:
+                  raise SystemExit(f'expected one GraphQL diagram fragment: {old!r}')
+              s = s.replace(old, new, 1)
           p.write_text(s, encoding='utf-8')
       - name: Commit README correction
         shell: bash

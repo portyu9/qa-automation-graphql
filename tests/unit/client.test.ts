@@ -31,6 +31,14 @@ describe('GraphQL client', () => {
 
   it('rejects credential-bearing URLs and redacts nested secrets', () => {
     expect(() => new GraphQLClient({ endpoint: 'https://user:pass@example.test/graphql' })).toThrow(/credentials/);
-    expect(redactSecrets({ authorization: 'Bearer abc', variables: { password: 'p', safe: 'ok' } })).toEqual({ authorization: '[REDACTED]', variables: { password: '[REDACTED]', safe: 'ok' } });
+    expect(redactSecrets({
+      authorization: 'Bearer abc',
+      variables: { password: 'p', safe: 'ok' },
+      message: 'request failed token="top-secret" with Bearer abc.def at https://user:password@example.test/graphql'
+    })).toEqual({
+      authorization: '[REDACTED]',
+      variables: { password: '[REDACTED]', safe: 'ok' },
+      message: 'request failed token=[REDACTED] with Bearer [REDACTED] at https://[REDACTED]@example.test/graphql'
+    });
   });
 });

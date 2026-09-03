@@ -3,7 +3,6 @@
 [![CI](https://github.com/portyu9/qa-automation-graphql/actions/workflows/ci.yml/badge.svg)](https://github.com/portyu9/qa-automation-graphql/actions/workflows/ci.yml)
 [![Security](https://github.com/portyu9/qa-automation-graphql/actions/workflows/security.yml/badge.svg)](https://github.com/portyu9/qa-automation-graphql/actions/workflows/security.yml)
 [![Docs](https://github.com/portyu9/qa-automation-graphql/actions/workflows/docs.yml/badge.svg)](https://github.com/portyu9/qa-automation-graphql/actions/workflows/docs.yml)
-[![Live Smoke](https://img.shields.io/badge/Live%20Smoke-manual-8250DF?logo=githubactions&logoColor=white)](https://github.com/portyu9/qa-automation-graphql/actions/workflows/live-smoke.yml)
 
 [![GraphQL.js](https://img.shields.io/badge/GraphQL.js-graphql-E10098?logo=graphql&logoColor=white)](https://www.graphql-js.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-language-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)

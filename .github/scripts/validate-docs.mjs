@@ -96,6 +96,16 @@ for (const doc of [
   }
 }
 
+if (!fs.existsSync('.github/scripts/validate-runtime-policy.mjs')) {
+  throw new Error('GraphQL runtime-policy validator is missing');
+}
+if (packageJson.scripts?.['runtime-policy:check'] !== 'node .github/scripts/validate-runtime-policy.mjs') {
+  throw new Error('package.json must expose runtime-policy:check');
+}
+if (!String(packageJson.scripts?.quality ?? '').includes('npm run runtime-policy:check')) {
+  throw new Error('package.json quality must retain runtime-policy:check');
+}
+
 console.log(
-  'Documentation contract validated: required sections, manifest-backed Toolchain versions, versionless technology badges, workflow badges, styled Mermaid architecture, documentation references, and directory-only repository map are consistent.',
+  'Documentation contract validated: required sections, manifest-backed Toolchain versions, versionless technology badges, workflow badges, styled Mermaid architecture, runtime-policy wiring, documentation references, and directory-only repository map are consistent.',
 );

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 
 const readme = fs.readFileSync('README.md', 'utf8');
+const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const required = [
   '# GraphQL Quality Engineering Framework',
   '## Quality model',
@@ -34,6 +35,26 @@ for (const workflow of ['ci.yml', 'security.yml', 'docs.yml']) {
 
 if (readme.includes('![Live Smoke]') || readme.includes('Live%20Smoke-manual')) {
   throw new Error('README must not include a live-smoke badge; the externally configured workflow is documented in prose instead');
+}
+
+const manifestBackedToolchain = [
+  ['GraphQL.js', packageJson.dependencies?.graphql, (version) => `| GraphQL.js | ${version} |`],
+  ['TypeScript', packageJson.devDependencies?.typescript, (version) => `| TypeScript | ${version} `],
+  ['Vitest', packageJson.devDependencies?.vitest, (version) => `| Vitest | ${version} |`],
+  [
+    'Coverage',
+    packageJson.devDependencies?.['@vitest/coverage-v8'],
+    (version) => `| Coverage | V8 through \`@vitest/coverage-v8\` ${version} |`,
+  ],
+];
+
+for (const [label, version, expectedFragment] of manifestBackedToolchain) {
+  if (typeof version !== 'string' || version.length === 0) {
+    throw new Error(`package.json is missing the dependency version required by README Toolchain: ${label}`);
+  }
+  if (!readme.includes(expectedFragment(version))) {
+    throw new Error(`README Toolchain ${label} version does not match package.json: expected ${version}`);
+  }
 }
 
 const mermaid = readme.match(/```mermaid\s*\n([\s\S]*?)```/u)?.[1];
@@ -76,5 +97,5 @@ for (const doc of [
 }
 
 console.log(
-  'Documentation contract validated: required sections, versionless technology badges, workflow badges, styled Mermaid architecture, documentation references, and directory-only repository map are consistent.',
+  'Documentation contract validated: required sections, manifest-backed Toolchain versions, versionless technology badges, workflow badges, styled Mermaid architecture, documentation references, and directory-only repository map are consistent.',
 );

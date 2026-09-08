@@ -1,0 +1,47 @@
+name: vitest-lock-refresh
+
+on:
+  push:
+    branches: [deps/vitest-5-lockstep]
+
+permissions:
+  contents: write
+
+jobs:
+  lock:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: true
+      - name: Verify pinned npm
+        run: npx --yes npm@11.19.1 --version
+      - name: Regenerate lock
+        run: npx --yes npm@11.19.1 install --package-lock-only --ignore-scripts
+      - name: Install exact graph
+        run: npx --yes npm@11.19.1 ci --ignore-scripts --no-audit --no-fund
+      - name: Verify coupled versions
+        run: |
+          node - <<'NODE'
+          const pkg = require('./package.json');
+          const lock = require('./package-lock.json');
+          for (const name of ['vitest', '@vitest/coverage-v8']) {
+            if (pkg.devDependencies[name] !== '5.0.0') throw new Error(`${name} declaration drift`);
+            if (lock.packages[`node_modules/${name}`]?.version !== '5.0.0') throw new Error(`${name} lock drift`);
+          }
+          NODE
+      - name: Publish generated lock only
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo 'package-lock.json already matches the verified graph'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package-lock.json
+          git diff --cached --quiet -- package-lock.json && exit 0
+          git commit -m 'deps: refresh lock for Vitest 5.0.0'
+          git push origin HEAD:deps/vitest-5-lockstep

@@ -58,7 +58,12 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: package-lock.json
-      - run: npm install --global --ignore-scripts "npm@${NPM_VERSION}"
+      - name: Pin and verify npm runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global --ignore-scripts "npm@${NPM_VERSION}"
+          [[ "$(npm --version)" == "$NPM_VERSION" ]]
       - name: Generate npm audit evidence
         shell: bash
         run: |

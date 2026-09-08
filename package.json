@@ -5,8 +5,8 @@
   "description": "GraphQL quality framework for schema, execution, policy, transport, persisted-operation, and contract verification.",
   "type": "module",
   "engines": {
-    "node": ">=22 <25",
-    "npm": ">=11 <12"
+    "node": ">=22.0.0 <23.0.0 || >=24.0.0 <25.0.0",
+    "npm": "11.19.1"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -18,10 +18,11 @@
     "test:live": "RUN_LIVE_GRAPHQL=true vitest run --config vitest.live.config.ts --reporter=default --reporter=junit --outputFile.junit=reports/live-junit.xml",
     "schema:check": "npm run build && node dist/scripts/schema-contract.js",
     "manifest:check": "npm run build && node dist/scripts/operation-manifest.js",
+    "runtime-policy:check": "node .github/scripts/validate-runtime-policy.mjs",
     "docs:check": "node .github/scripts/validate-docs.mjs",
     "workflow-pins:check": "node .github/scripts/validate-workflow-pins.mjs",
     "repo:check": "node .github/scripts/validate-repository.mjs",
-    "quality": "npm run repo:check && npm run docs:check && npm run workflow-pins:check && npm run typecheck && npm run test:coverage && npm run schema:check && npm run manifest:check",
+    "quality": "npm run repo:check && npm run runtime-policy:check && npm run docs:check && npm run workflow-pins:check && npm run typecheck && npm run test:coverage && npm run schema:check && npm run manifest:check",
     "schema:refresh": "npm run build && node dist/scripts/schema-contract.js --write",
     "manifest:refresh": "npm run build && node dist/scripts/operation-manifest.js --write"
   },

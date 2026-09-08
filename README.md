@@ -121,8 +121,8 @@ The architecture separates canonical contracts from runtime and transport concer
 | npm | 11.19.1 |
 | GraphQL.js | 17.0.2 |
 | TypeScript | 7.0.2 with strict contracts including `exactOptionalPropertyTypes` |
-| Vitest | 4.1.11 |
-| Coverage | V8 through `@vitest/coverage-v8` 4.1.11 |
+| Vitest | 5.0.0 |
+| Coverage | V8 through `@vitest/coverage-v8` 5.0.0 |
 
 The repository engine range is intentionally bounded to supported Node lines rather than silently accepting an unqualified future major.
 

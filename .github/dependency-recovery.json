@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "enabled": true,
+  "maxRunAttempts": 2,
+  "transientSteps": [
+    "Pin npm runtime",
+    "Install locked dependency graph",
+    "Pin npm runtime on Node 22",
+    "Pin and verify npm runtime",
+    "Upload GraphQL qualification evidence"
+  ]
+}

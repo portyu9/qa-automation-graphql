@@ -213,7 +213,18 @@ test('recovery config is bounded and GraphQL infrastructure-only', () => {
   for (const forbidden of substantiveSteps) {
     assert.equal(recoveryConfig.transientSteps.includes(forbidden), false, forbidden);
   }
-  assert.ok(validateRecoveryConfig({ ...recoveryConfig, maxRunAttempts: 4 }).length > 0);
+  for (const maxRunAttempts of [1, 3, 4]) {
+    assert.ok(
+      validateRecoveryConfig({ ...recoveryConfig, maxRunAttempts }).length > 0,
+      `maxRunAttempts=${maxRunAttempts} must be rejected`,
+    );
+  }
+  assert.ok(
+    validateRecoveryConfig({
+      ...recoveryConfig,
+      transientSteps: [...recoveryConfig.transientSteps, 'Bootstrap future GraphQL runtime'],
+    }).length > 0,
+  );
   assert.ok(
     validateRecoveryConfig({
       ...recoveryConfig,

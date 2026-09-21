@@ -30,7 +30,7 @@
     "graphql": "17.0.2"
   },
   "devDependencies": {
-    "@types/node": "24.13.4",
+    "@types/node": "24.13.5",
     "@vitest/coverage-v8": "5.0.0",
     "typescript": "7.0.2",
     "vitest": "5.0.0"

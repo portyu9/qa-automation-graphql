@@ -8,6 +8,9 @@ on:
       - '.github/dependabot.yml'
       - '.github/dependency-governance.json'
       - '.github/dependency-recovery.json'
+      - '.github/codeql-autofix.json'
+      - '.github/scripts/codeql-autofix-wrapper.selfcheck.mjs'
+      - '.github/workflows/codeql-autofix.yml'
       - '.github/scripts/dependency-governance.mjs'
       - '.github/scripts/dependency-governance.selfcheck.mjs'
       - '.github/scripts/validate_codeql_sarif.py'
@@ -84,6 +87,7 @@ jobs:
           node --test
           .github/scripts/dependency-governance.selfcheck.mjs
           .github/scripts/dependency-recovery-policy.selfcheck.mjs
+          .github/scripts/codeql-autofix-wrapper.selfcheck.mjs
       - name: Validate zero-alert security policy helpers
         run: |
           python3 -m py_compile \

@@ -111,6 +111,8 @@ The root README retains only this architecture overview. Detailed ownership, exe
 
 The Node engine range is deliberately bounded to qualified lines rather than silently accepting an untested future major.
 
+Manifest-backed toolchain entries intentionally track qualified **major lines**: governed patch/minor dependency updates stay autonomous, while any major transition requires an explicit human-reviewed Toolchain update.
+
 ## Quick start
 
 ```bash

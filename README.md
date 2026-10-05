@@ -104,10 +104,10 @@ The root README retains only this architecture overview. Detailed ownership, exe
 | --- | --- |
 | Node.js | 24.20.0 primary; additional Node compatibility lane |
 | npm | 11.19.1 |
-| GraphQL.js | 17.0.2 |
-| TypeScript | 7.0.2 with strict contracts including `exactOptionalPropertyTypes` |
-| Vitest | 5.0.0 |
-| Coverage | V8 through `@vitest/coverage-v8` 5.0.0 |
+| GraphQL.js | 17.x qualified line |
+| TypeScript | 7.x qualified line with strict contracts including `exactOptionalPropertyTypes` |
+| Vitest | 5.x qualified line |
+| Coverage | V8 through `@vitest/coverage-v8` 5.x qualified line |
 
 The Node engine range is deliberately bounded to qualified lines rather than silently accepting an untested future major.
 

@@ -37,23 +37,38 @@ if (readme.includes('![Live Smoke]') || readme.includes('Live%20Smoke-manual')) 
   throw new Error('README must not include a live-smoke badge; the externally configured workflow is documented in prose instead');
 }
 
+function qualifiedMajorLine(version, label) {
+  if (typeof version !== 'string' || version.length === 0) {
+    throw new Error(`package.json is missing the dependency version required by README Toolchain: ${label}`);
+  }
+  const match = version.match(/^(\\d+)\\./u);
+  if (!match) {
+    throw new Error(`package.json dependency version for ${label} is not a qualified semantic version: ${version}`);
+  }
+  return `${match[1]}.x qualified line`;
+}
+
 const manifestBackedToolchain = [
-  ['GraphQL.js', packageJson.dependencies?.graphql, (version) => `| GraphQL.js | ${version} |`],
-  ['TypeScript', packageJson.devDependencies?.typescript, (version) => `| TypeScript | ${version} `],
-  ['Vitest', packageJson.devDependencies?.vitest, (version) => `| Vitest | ${version} |`],
+  ['GraphQL.js', packageJson.dependencies?.graphql, (line) => `| GraphQL.js | ${line} |`],
+  [
+    'TypeScript',
+    packageJson.devDependencies?.typescript,
+    (line) => `| TypeScript | ${line} with strict contracts including \`exactOptionalPropertyTypes\` |`,
+  ],
+  ['Vitest', packageJson.devDependencies?.vitest, (line) => `| Vitest | ${line} |`],
   [
     'Coverage',
     packageJson.devDependencies?.['@vitest/coverage-v8'],
-    (version) => `| Coverage | V8 through \`@vitest/coverage-v8\` ${version} |`,
+    (line) => `| Coverage | V8 through \`@vitest/coverage-v8\` ${line} |`,
   ],
 ];
 
 for (const [label, version, expectedFragment] of manifestBackedToolchain) {
-  if (typeof version !== 'string' || version.length === 0) {
-    throw new Error(`package.json is missing the dependency version required by README Toolchain: ${label}`);
-  }
-  if (!readme.includes(expectedFragment(version))) {
-    throw new Error(`README Toolchain ${label} version does not match package.json: expected ${version}`);
+  const qualifiedLine = qualifiedMajorLine(version, label);
+  if (!readme.includes(expectedFragment(qualifiedLine))) {
+    throw new Error(
+      `README Toolchain ${label} major line does not match package.json: expected ${qualifiedLine}`,
+    );
   }
 }
 
@@ -107,5 +122,5 @@ if (!String(packageJson.scripts?.quality ?? '').includes('npm run runtime-policy
 }
 
 console.log(
-  'Documentation contract validated: required sections, manifest-backed Toolchain versions, versionless technology badges, workflow badges, styled Mermaid architecture, runtime-policy wiring, documentation references, and directory-only repository map are consistent.',
+  'Documentation contract validated: required sections, manifest-backed Toolchain major lines, versionless technology badges, workflow badges, styled Mermaid architecture, runtime-policy wiring, documentation references, and directory-only repository map are consistent.',
 );

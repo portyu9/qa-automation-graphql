@@ -41,7 +41,7 @@ function qualifiedMajorLine(version, label) {
   if (typeof version !== 'string' || version.length === 0) {
     throw new Error(`package.json is missing the dependency version required by README Toolchain: ${label}`);
   }
-  const match = version.match(/^(\\d+)\\./u);
+  const match = version.match(/^(\d+)\./u);
   if (!match) {
     throw new Error(`package.json dependency version for ${label} is not a qualified semantic version: ${version}`);
   }

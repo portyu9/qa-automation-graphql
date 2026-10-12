@@ -56,7 +56,8 @@
     ".github/scripts/validate_codeql_sarif.py",
     ".github/scripts/validate_codeql_sarif_selfcheck.py",
     ".github/scripts/validate_security_stack.py",
-    ".github/scripts/codeql-autofix-wrapper.selfcheck.mjs"
+    ".github/scripts/codeql-autofix-wrapper.selfcheck.mjs",
+    ".github/scripts/codeql-alert-preflight.mjs"
   ],
   "ecosystems": {
     "npm": {

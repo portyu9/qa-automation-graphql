@@ -101,7 +101,41 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { runCodeqlAutofix } = await import(
+            const { readFileSync, writeFileSync } = await import('node:fs');
+            const { join } = await import('node:path');
+            const { selectOpenCodeqlTargets } = await import(
+              `${process.env.GITHUB_WORKSPACE}/.github/scripts/codeql-alert-preflight.mjs`
+            );
+            const { runCodeqlAutofix, validateAutofixConfig } = await import(
               `${process.env.GITHUB_WORKSPACE}/.codeql-autofix-controller/.github/scripts/codeql-autofix-policy.mjs`
             );
-            await runCodeqlAutofix({ github, context, core });
+            const config = JSON.parse(readFileSync('.github/codeql-autofix.json', 'utf8'));
+            const errors = validateAutofixConfig(config);
+            if (errors.length) throw new Error(`Invalid CodeQL autofix policy: ${errors.join('; ')}`);
+            if (!config.enabled) {
+              core.info('CodeQL autofix disabled by reviewed caller policy.');
+              return;
+            }
+            // A successful empty, authenticated inventory is a no-op, not a missing
+            // historical alert failure. All HTTP/permission errors remain fatal.
+            const response = await github.rest.codeScanning.listAlertsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              tool_name: config.toolName,
+              per_page: 100,
+              page: 1,
+            });
+            const decision = selectOpenCodeqlTargets(response.data, config);
+            if (decision.state === 'empty') {
+              core.info('CodeQL: zero open alerts confirmed by the authenticated API; no autofix request necessary.');
+              return;
+            }
+            // Ephemeral, narrowed targets prevent historical closed/deleted alert
+            // numbers from causing 404s. They never expand the reviewed allowlist.
+            const configPath = join(process.env.RUNNER_TEMP, 'codeql-open-targets.json');
+            writeFileSync(configPath, JSON.stringify({
+              ...config, targetAlertNumbers: decision.targets,
+            }), { mode: 0o600 });
+            core.info(`CodeQL: processing explicitly allowed open alerts ${decision.targets.join(', ')}`);
+            await runCodeqlAutofix({ github, context, core, configPath });

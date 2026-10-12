@@ -3,10 +3,6 @@
   "enabled": true,
   "defaultBranch": "main",
   "toolName": "CodeQL",
-  "targetAlertNumbers": [
-    1,
-    2
-  ],
   "maxAlertsPerRun": 2,
   "maxChangedFiles": 4,
   "maxChangedLines": 200,

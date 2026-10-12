@@ -9,8 +9,8 @@ const workflow = fs.readFileSync('.github/workflows/codeql-autofix.yml', 'utf8')
 const controllerSha = '9280e1cf79bea79c027eabc8abe355ad89e6c010';
 const sorted = (values) => [...values].sort();
 
-test('caller targets only the requested alerts with bounded scope', () => {
-  assert.deepEqual(config.targetAlertNumbers, [1, 2]);
+test('tracked policy has no alert IDs and keeps bounded scope', () => {
+  assert.ok(!Object.hasOwn(config, 'targetAlertNumbers'));
   assert.equal(config.maxAlertsPerRun, 2);
   assert.equal(config.maxChangedFiles, 4);
   assert.equal(config.maxChangedLines, 200);
@@ -49,27 +49,32 @@ test('autofix control plane requires manual review', () => {
 });
 
 test('no open CodeQL alerts is a verified no-op, not a missing-ID error', () => {
-  assert.deepEqual(selectOpenCodeqlTargets([], config), { state: 'empty', targets: [] });
+  assert.deepEqual(selectOpenCodeqlTargets([], config), { state: 'empty', targets: [], queued: 0 });
 });
 
-test('live CodeQL targets are intersected with the reviewed target allowlist', () => {
-  const open = [{ number: 2, state: 'open', tool: { name: 'CodeQL' } }];
-  assert.deepEqual(selectOpenCodeqlTargets(open, config), { state: 'targets', targets: [2] });
-  assert.deepEqual(selectOpenCodeqlTargets([...open, { number: 1, state: 'open', tool: { name: 'CodeQL' } }], config).targets, [1, 2]);
+test('live CodeQL targets are discovered dynamically, sorted and bounded', () => {
+  const entry = (number) => ({ number, state: 'open', tool: { name: 'CodeQL' } });
+  assert.deepEqual(selectOpenCodeqlTargets([entry(72)], config), { state: 'targets', targets: [72], queued: 0 });
+  assert.deepEqual(selectOpenCodeqlTargets([entry(99), entry(72), entry(44)], config),
+    { state: 'targets', targets: [44, 72], queued: 1 });
 });
 
 test('invalid, ambiguous, or non-authorized inventories fail closed', () => {
   const entry = (number) => ({ number, state: 'open', tool: { name: 'CodeQL' } });
   for (const inventory of [
-    null, {}, [entry(3)], [entry(1), entry(3)], [entry(1), entry(1)],
+    null, {}, [entry(1), entry(1)],
     [{ number: 1, state: 'closed', tool: { name: 'CodeQL' } }],
     [{ number: 1, state: 'open', tool: { name: 'Other' } }],
     Array.from({ length: 100 }, (_, i) => entry(i + 1)),
   ]) assert.throws(() => selectOpenCodeqlTargets(inventory, config));
+  assert.throws(() => selectOpenCodeqlTargets([entry(1)], { ...config, targetAlertNumbers: [1] }));
+  assert.throws(() => selectOpenCodeqlTargets([entry(1)], { ...config, maxAlertsPerRun: 0 }));
 });
 
 test('trusted workflow reads authenticated current open alerts and never masks HTTP failures', () => {
   assert.match(workflow, /codeScanning\.listAlertsForRepo/u);
+  assert.match(workflow, /Object\.hasOwn\(config, 'targetAlertNumbers'\)/u);
+  assert.match(workflow, /targetAlertNumbers: decision\.targets/u);
   assert.match(workflow, /state: 'open'/u);
   assert.match(workflow, /per_page: 100/u);
   assert.match(workflow, /selectOpenCodeqlTargets\(response\.data, config\)/u);

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import test from 'node:test';
+import { selectOpenCodeqlTargets } from './codeql-alert-preflight.mjs';
 
 const config = JSON.parse(fs.readFileSync('.github/codeql-autofix.json', 'utf8'));
 const governance = JSON.parse(fs.readFileSync('.github/dependency-governance.json', 'utf8'));
@@ -22,7 +23,7 @@ test('qualification workflows exactly mirror dependency governance', () => {
 });
 
 test('autofix cannot directly change workflow, dependency, or policy files', () => {
-  for (const denied of ['.github/workflows/', '.github/dependabot.yml', '.github/dependency-governance.json', '.github/dependency-recovery.json', '.github/codeql-autofix.json', 'package.json', 'package-lock.json', 'Dockerfile']) assert.ok(config.deniedPaths.includes(denied), `${denied} must stay denied`);
+  for (const denied of ['.github/workflows/', '.github/dependabot.yml', '.github/dependency-governance.json', '.github/dependency-recovery.json', '.github/codeql-autofix.json', 'package.json', 'package-lock.json', 'Dockerfile', '.github/scripts/codeql-alert-preflight.mjs']) assert.ok(config.deniedPaths.includes(denied), `${denied} must stay denied`);
 });
 
 test('wrapper pins canonical controller and every external action immutably', () => {
@@ -44,5 +45,35 @@ test('privileged execution is trusted-default-branch only', () => {
 });
 
 test('autofix control plane requires manual review', () => {
-  for (const protectedPath of ['.github/codeql-autofix.json', '.github/workflows/codeql-autofix.yml', '.github/scripts/codeql-autofix-wrapper.selfcheck.mjs']) assert.ok(governance.manualReviewPaths.includes(protectedPath), `${protectedPath} must require manual review`);
+  for (const protectedPath of ['.github/codeql-autofix.json', '.github/workflows/codeql-autofix.yml', '.github/scripts/codeql-autofix-wrapper.selfcheck.mjs', '.github/scripts/codeql-alert-preflight.mjs']) assert.ok(governance.manualReviewPaths.includes(protectedPath), `${protectedPath} must require manual review`);
+});
+
+test('no open CodeQL alerts is a verified no-op, not a missing-ID error', () => {
+  assert.deepEqual(selectOpenCodeqlTargets([], config), { state: 'empty', targets: [] });
+});
+
+test('live CodeQL targets are intersected with the reviewed target allowlist', () => {
+  const open = [{ number: 2, state: 'open', tool: { name: 'CodeQL' } }];
+  assert.deepEqual(selectOpenCodeqlTargets(open, config), { state: 'targets', targets: [2] });
+  assert.deepEqual(selectOpenCodeqlTargets([...open, { number: 1, state: 'open', tool: { name: 'CodeQL' } }], config).targets, [1, 2]);
+});
+
+test('invalid, ambiguous, or non-authorized inventories fail closed', () => {
+  const entry = (number) => ({ number, state: 'open', tool: { name: 'CodeQL' } });
+  for (const inventory of [
+    null, {}, [entry(3)], [entry(1), entry(3)], [entry(1), entry(1)],
+    [{ number: 1, state: 'closed', tool: { name: 'CodeQL' } }],
+    [{ number: 1, state: 'open', tool: { name: 'Other' } }],
+    Array.from({ length: 100 }, (_, i) => entry(i + 1)),
+  ]) assert.throws(() => selectOpenCodeqlTargets(inventory, config));
+});
+
+test('trusted workflow reads authenticated current open alerts and never masks HTTP failures', () => {
+  assert.match(workflow, /codeScanning\.listAlertsForRepo/u);
+  assert.match(workflow, /state: 'open'/u);
+  assert.match(workflow, /per_page: 100/u);
+  assert.match(workflow, /selectOpenCodeqlTargets\(response\.data, config\)/u);
+  assert.match(workflow, /decision\.state === 'empty'/u);
+  assert.match(workflow, /await runCodeqlAutofix\(\{ github, context, core, configPath \}\)/u);
+  assert.doesNotMatch(workflow, /catch\s*\([^)]+\)\s*\{[\s\S]*?decision\.state === 'empty'/u);
 });

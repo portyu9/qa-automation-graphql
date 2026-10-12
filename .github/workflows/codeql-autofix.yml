@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/codeql-autofix.json'
       - '.github/scripts/codeql-autofix-wrapper.selfcheck.mjs'
+      - '.github/scripts/codeql-alert-preflight.mjs'
       - '.github/workflows/codeql-autofix.yml'
       - '.github/dependency-governance.json'
   workflow_run:
@@ -54,9 +55,11 @@ jobs:
           import { readFileSync } from 'node:fs';
           import { validateAutofixConfig } from './.codeql-autofix-controller/.github/scripts/codeql-autofix-policy.mjs';
           const config = JSON.parse(readFileSync('.github/codeql-autofix.json', 'utf8'));
-          const errors = validateAutofixConfig(config);
+          if (Object.hasOwn(config, 'targetAlertNumbers')) throw new Error('Caller must discover alert targets from GitHub at runtime');
+          // Canonical schema proof with a synthetic, never-requested target.
+          const errors = validateAutofixConfig({ ...config, targetAlertNumbers: [config.maxAlertsPerRun] });
           if (errors.length > 0) throw new Error(`Invalid CodeQL autofix config:\n- ${errors.join('\n- ')}`);
-          console.log('canonical-controller caller config: valid');
+          console.log('canonical-controller caller config: valid (runtime alert discovery)');
           NODE
       - name: Exercise caller integration invariants
         run: node --test .github/scripts/codeql-autofix-wrapper.selfcheck.mjs
@@ -110,7 +113,8 @@ jobs:
               `${process.env.GITHUB_WORKSPACE}/.codeql-autofix-controller/.github/scripts/codeql-autofix-policy.mjs`
             );
             const config = JSON.parse(readFileSync('.github/codeql-autofix.json', 'utf8'));
-            const errors = validateAutofixConfig(config);
+            if (Object.hasOwn(config, 'targetAlertNumbers')) throw new Error('Tracked policy cannot pin CodeQL alert IDs');
+            const errors = validateAutofixConfig({ ...config, targetAlertNumbers: [config.maxAlertsPerRun] });
             if (errors.length) throw new Error(`Invalid CodeQL autofix policy: ${errors.join('; ')}`);
             if (!config.enabled) {
               core.info('CodeQL autofix disabled by reviewed caller policy.');
@@ -131,11 +135,11 @@ jobs:
               core.info('CodeQL: zero open alerts confirmed by the authenticated API; no autofix request necessary.');
               return;
             }
-            // Ephemeral, narrowed targets prevent historical closed/deleted alert
-            // numbers from causing 404s. They never expand the reviewed allowlist.
+            // Runtime-only targets derive exclusively from the authenticated open-alert
+            // inventory, bounded by maxAlertsPerRun; no static alert IDs are trusted.
             const configPath = join(process.env.RUNNER_TEMP, 'codeql-open-targets.json');
             writeFileSync(configPath, JSON.stringify({
               ...config, targetAlertNumbers: decision.targets,
             }), { mode: 0o600 });
-            core.info(`CodeQL: processing explicitly allowed open alerts ${decision.targets.join(', ')}`);
+            core.info(`CodeQL: processing ${decision.targets.length} live alerts; ${decision.queued} queued for later runs.`);
             await runCodeqlAutofix({ github, context, core, configPath });

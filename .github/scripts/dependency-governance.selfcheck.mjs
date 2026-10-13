@@ -116,6 +116,31 @@ test('npm patch dependency-only update is eligible', () => {
   assert.equal(result.changes[0].risk, 'patch');
 });
 
+test('Dependabot lock root may omit unchanged package.json overrides, but cannot contradict them', () => {
+  const f = npmFixture();
+  f.basePackage.overrides = { 'source-map-js': '1.2.2' };
+  f.headPackage.overrides = clone(f.basePackage.overrides);
+  f.baseLock.packages[''].overrides = clone(f.basePackage.overrides);
+  const eligible = validateNpmSemanticChange(
+    f.basePackage, f.headPackage, f.baseLock, f.headLock, meta('express'),
+  );
+  assert.equal(eligible.eligible, true, eligible.reasons.join('; '));
+
+  f.headLock.packages[''].overrides = { 'source-map-js': '9.0.0' };
+  const bad = validateNpmSemanticChange(
+    f.basePackage, f.headPackage, f.baseLock, f.headLock, meta('express'),
+  );
+  assert.equal(bad.eligible, false);
+  assert.match(bad.reasons.join('; '), /root overrides conflict/);
+
+  f.headLock.packages[''].overrides = clone(f.basePackage.overrides);
+  f.headPackage.overrides = { 'source-map-js': '9.0.0' };
+  const changedContract = validateNpmSemanticChange(
+    f.basePackage, f.headPackage, f.baseLock, f.headLock, meta('express'),
+  );
+  assert.equal(changedContract.eligible, false);
+});
+
 test('npm major, scripts mutation, and newly introduced install script are blocked', () => {
   const major = npmFixture('^1.2.3', '^2.0.0');
   assert.equal(

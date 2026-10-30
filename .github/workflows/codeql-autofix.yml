@@ -39,7 +39,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: portyu9/qa-automation-mobile-appium
-          ref: 9280e1cf79bea79c027eabc8abe355ad89e6c010
+          ref: 4aca606907a89f55ec3d498020f395c70a27887f
           path: .codeql-autofix-controller
           persist-credentials: false
           fetch-depth: 1
@@ -55,9 +55,7 @@ jobs:
           import { readFileSync } from 'node:fs';
           import { validateAutofixConfig } from './.codeql-autofix-controller/.github/scripts/codeql-autofix-policy.mjs';
           const config = JSON.parse(readFileSync('.github/codeql-autofix.json', 'utf8'));
-          if (Object.hasOwn(config, 'targetAlertNumbers')) throw new Error('Caller must discover alert targets from GitHub at runtime');
-          // Canonical schema proof with a synthetic, never-requested target.
-          const errors = validateAutofixConfig({ ...config, targetAlertNumbers: [config.maxAlertsPerRun] });
+          const errors = validateAutofixConfig(config);
           if (errors.length > 0) throw new Error(`Invalid CodeQL autofix config:\n- ${errors.join('\n- ')}`);
           console.log('canonical-controller caller config: valid (runtime alert discovery)');
           NODE
@@ -91,7 +89,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: portyu9/qa-automation-mobile-appium
-          ref: 9280e1cf79bea79c027eabc8abe355ad89e6c010
+          ref: 4aca606907a89f55ec3d498020f395c70a27887f
           path: .codeql-autofix-controller
           persist-credentials: false
           fetch-depth: 1
@@ -104,8 +102,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { readFileSync, writeFileSync } = await import('node:fs');
-            const { join } = await import('node:path');
+            const { readFileSync } = await import('node:fs');
             const { selectOpenCodeqlTargets } = await import(
               `${process.env.GITHUB_WORKSPACE}/.github/scripts/codeql-alert-preflight.mjs`
             );
@@ -113,15 +110,15 @@ jobs:
               `${process.env.GITHUB_WORKSPACE}/.codeql-autofix-controller/.github/scripts/codeql-autofix-policy.mjs`
             );
             const config = JSON.parse(readFileSync('.github/codeql-autofix.json', 'utf8'));
-            if (Object.hasOwn(config, 'targetAlertNumbers')) throw new Error('Tracked policy cannot pin CodeQL alert IDs');
-            const errors = validateAutofixConfig({ ...config, targetAlertNumbers: [config.maxAlertsPerRun] });
+            const errors = validateAutofixConfig(config);
             if (errors.length) throw new Error(`Invalid CodeQL autofix policy: ${errors.join('; ')}`);
             if (!config.enabled) {
               core.info('CodeQL autofix disabled by reviewed caller policy.');
               return;
             }
-            // A successful empty, authenticated inventory is a no-op, not a missing
-            // historical alert failure. All HTTP/permission errors remain fatal.
+            // Retain independent GraphQL preflight validation as a defense in depth.
+            // The canonical controller re-reads the authenticated inventory itself
+            // and refuses stale or malformed results. No alert IDs are persisted.
             const response = await github.rest.codeScanning.listAlertsForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -132,14 +129,8 @@ jobs:
             });
             const decision = selectOpenCodeqlTargets(response.data, config);
             if (decision.state === 'empty') {
-              core.info('CodeQL: zero open alerts confirmed by the authenticated API; no autofix request necessary.');
+              core.info('CodeQL: zero open alerts confirmed by authenticated preflight; no proposal necessary.');
               return;
             }
-            // Runtime-only targets derive exclusively from the authenticated open-alert
-            // inventory, bounded by maxAlertsPerRun; no static alert IDs are trusted.
-            const configPath = join(process.env.RUNNER_TEMP, 'codeql-open-targets.json');
-            writeFileSync(configPath, JSON.stringify({
-              ...config, targetAlertNumbers: decision.targets,
-            }), { mode: 0o600 });
-            core.info(`CodeQL: processing ${decision.targets.length} live alerts; ${decision.queued} queued for later runs.`);
-            await runCodeqlAutofix({ github, context, core, configPath });
+            core.info(`CodeQL: preflight verified ${decision.targets.length} live alerts; ${decision.queued} queued. Canonical controller will revalidate.`);
+            await runCodeqlAutofix({ github, context, core });

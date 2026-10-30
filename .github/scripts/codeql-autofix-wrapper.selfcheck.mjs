@@ -6,7 +6,7 @@ import { selectOpenCodeqlTargets } from './codeql-alert-preflight.mjs';
 const config = JSON.parse(fs.readFileSync('.github/codeql-autofix.json', 'utf8'));
 const governance = JSON.parse(fs.readFileSync('.github/dependency-governance.json', 'utf8'));
 const workflow = fs.readFileSync('.github/workflows/codeql-autofix.yml', 'utf8');
-const controllerSha = '9280e1cf79bea79c027eabc8abe355ad89e6c010';
+const controllerSha = '4aca606907a89f55ec3d498020f395c70a27887f';
 const sorted = (values) => [...values].sort();
 
 test('tracked policy has no alert IDs and keeps bounded scope', () => {
@@ -73,12 +73,19 @@ test('invalid, ambiguous, or non-authorized inventories fail closed', () => {
 
 test('trusted workflow reads authenticated current open alerts and never masks HTTP failures', () => {
   assert.match(workflow, /codeScanning\.listAlertsForRepo/u);
-  assert.match(workflow, /Object\.hasOwn\(config, 'targetAlertNumbers'\)/u);
-  assert.match(workflow, /targetAlertNumbers: decision\.targets/u);
+  assert.match(workflow, /validateAutofixConfig\(config\)/u);
+  assert.doesNotMatch(workflow, /targetAlertNumbers: decision\.targets/u);
   assert.match(workflow, /state: 'open'/u);
   assert.match(workflow, /per_page: 100/u);
   assert.match(workflow, /selectOpenCodeqlTargets\(response\.data, config\)/u);
   assert.match(workflow, /decision\.state === 'empty'/u);
-  assert.match(workflow, /await runCodeqlAutofix\(\{ github, context, core, configPath \}\)/u);
+  assert.match(workflow, /await runCodeqlAutofix\(\{ github, context, core \}\)/u);
   assert.doesNotMatch(workflow, /catch\s*\([^)]+\)\s*\{[\s\S]*?decision\.state === 'empty'/u);
+});
+
+
+test('canonical controller is repinned to accepted non-draft dynamic-discovery release', () => {
+  assert.equal((workflow.match(/ref: 4aca606907a89f55ec3d498020f395c70a27887f/g) || []).length, 2);
+  assert.doesNotMatch(workflow, /writeFileSync|configPath|targetAlertNumbers: decision/u);
+  assert.match(workflow, /selectOpenCodeqlTargets\(response\.data, config\)/u);
 });

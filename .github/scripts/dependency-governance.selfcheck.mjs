@@ -2,9 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
+  canRetryMergeAfterBaseRace,
   classifyEcosystem,
   compareSemver,
   ensureOwnerReviewAndApproval,
+  isConcurrentBaseModification,
   eventPullNumber,
   parseDependabotMetadata,
   parsePositiveInteger,
@@ -12,6 +14,7 @@ import {
   reconcileIndependently,
   requestDependabotRefresh,
   selectQualificationRun,
+  shouldSweepDependabotPulls,
   validateActionsSemanticChange,
   validateConfig,
   validateDockerSemanticChange,
@@ -587,12 +590,70 @@ test('scheduled reconciliation isolates per-PR failures and reports all outcomes
 test('privileged workflow never checks out the dependency PR head', () => {
   const workflow = readFileSync('.github/workflows/dependency-governance.yml', 'utf8');
   assert.match(workflow, /push:/);
-  assert.match(workflow, /pull_request_target:/);
+  assert.doesNotMatch(workflow, /pull_request_target:/);
   assert.match(workflow, /workflow_run:/);
+  assert.match(workflow, /WORKFLOW_RUN_NAME:/);
+  assert.match(workflow, /WORKFLOW_RUN_CONCLUSION:/);
   assert.match(workflow, /schedule:/);
   assert.match(workflow, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
   assert.match(workflow, /persist-credentials: false/);
   assert.match(workflow, /DEPENDABOT_OWNER_TOKEN/);
   assert.doesNotMatch(workflow, /ref:\s*\$\{\{\s*github\.event\.pull_request\.head/);
   assert.doesNotMatch(workflow, /ref:\s*\$\{\{\s*github\.event\.workflow_run\.head_sha/);
+});
+
+test('trusted default-branch workflow completion sweeps stranded Dependabot PRs', () => {
+  const props = {
+    config,
+    headBranch: config.baseBranch,
+    conclusion: 'success',
+    workflowName: config.requiredWorkflows[0].workflow,
+  };
+  assert.equal(shouldSweepDependabotPulls('push', props), true);
+  assert.equal(shouldSweepDependabotPulls('schedule', props), true);
+  assert.equal(shouldSweepDependabotPulls('workflow_run', props), true);
+  assert.equal(shouldSweepDependabotPulls('workflow_run', { ...props, headBranch: 'feature' }), false);
+  assert.equal(shouldSweepDependabotPulls('workflow_run', { ...props, conclusion: 'failure' }), false);
+  assert.equal(shouldSweepDependabotPulls('workflow_run', { ...props, workflowName: 'untrusted' }), false);
+  assert.equal(shouldSweepDependabotPulls('pull_request', props), false);
+  assert.equal(shouldSweepDependabotPulls('pull_request_target', props), false);
+});
+
+test('only GitHub 405 base-modified merge conflicts are recoverable', () => {
+  const valid = new Error(
+    'GitHub API PUT https://api.github.com/repos/example/repository/pulls/42/merge failed (405): Base branch was modified. Review and try the merge again.',
+  );
+  // GitHub sometimes appends a human instruction after the base-changed cause.
+  assert.equal(isConcurrentBaseModification(valid), true);
+  for (const other of [
+    new Error('GitHub API PUT https://api.github.com/repos/example/repository/pulls/42/merge failed (405): Pull Request is not mergeable'),
+    new Error('GitHub API PUT https://api.github.com/repos/example/repository/pulls/42/merge failed (403): Base branch was modified.'),
+    new Error('GitHub API PUT https://api.github.com/repos/example/repository/pulls/42/merge failed (409): Head branch was modified.'),
+    new Error('GitHub API PUT https://api.github.com/repos/example/repository/issues/42/merge failed (405): Base branch was modified.'),
+  ]) assert.equal(isConcurrentBaseModification(other), false, other.message);
+});
+
+test('merge-race retry requires unchanged signed head, unchanged base, and every requalification gate', () => {
+  const before = {
+    pull: { state: 'open', head: { sha: 'a'.repeat(40) } },
+    baseSha: 'b'.repeat(40),
+    provenance: { eligible: true },
+    metadataAssessment: { eligible: true },
+    semantic: { eligible: true },
+    qualification: { allSuccess: true },
+  };
+  assert.equal(canRetryMergeAfterBaseRace(before, clone(before)), true);
+  const disallowed = [
+    { pull: { ...before.pull, state: 'closed' } },
+    { pull: { ...before.pull, head: { sha: 'c'.repeat(40) } } },
+    { baseSha: 'c'.repeat(40) },
+    { provenance: { eligible: false } },
+    { metadataAssessment: { eligible: false } },
+    { semantic: { eligible: false } },
+    { qualification: { allSuccess: false } },
+    { qualification: null },
+  ];
+  for (const mutation of disallowed) {
+    assert.equal(canRetryMergeAfterBaseRace(before, { ...clone(before), ...mutation }), false);
+  }
 });

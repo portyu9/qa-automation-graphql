@@ -801,7 +801,7 @@ export function canRetryMergeAfterBaseRace(before, after) {
 }
 
 export function isConcurrentBaseModification(error) {
-  return /^GitHub API PUT https:\/\/api\.github\.com\/repos\/[^/\s]+\/[^/\s]+\/pulls\/[1-9]\d*\/merge failed \(405\): Base branch was modified\.?$/u.test(
+  return /^GitHub API PUT https:\/\/api\.github\.com\/repos\/[^/\s]+\/[^/\s]+\/pulls\/[1-9]\d*\/merge failed \(405\): Base branch was modified\.(?: Review and try the merge again\.)?$/u.test(
     String(error?.message || ''),
   );
 }

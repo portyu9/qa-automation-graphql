@@ -788,6 +788,18 @@ export function shouldSweepDependabotPulls(eventName, { headBranch, conclusion, 
   );
 }
 
+export function canRetryMergeAfterBaseRace(before, after) {
+  return (
+    after.pull.state === 'open' &&
+    after.pull.head.sha === before.pull.head.sha &&
+    after.baseSha === before.baseSha &&
+    after.provenance.eligible &&
+    after.metadataAssessment.eligible &&
+    after.semantic.eligible &&
+    after.qualification?.allSuccess === true
+  );
+}
+
 export function isConcurrentBaseModification(error) {
   return /^GitHub API PUT https:\/\/api\.github\.com\/repos\/[^/\s]+\/[^/\s]+\/pulls\/[1-9]\d*\/merge failed \(405\): Base branch was modified\.?$/u.test(
     String(error?.message || ''),
@@ -1435,14 +1447,7 @@ async function maybeMerge(api, ownerApi, assessment, config, allowMerge) {
       const latest = await assessPull(api, assessment.pull.number, config, {
         includeQualification: true,
       });
-      const stillQualified =
-        latest.pull.state === 'open' &&
-        latest.pull.head.sha === verified.pull.head.sha &&
-        latest.provenance.eligible &&
-        latest.metadataAssessment.eligible &&
-        latest.semantic.eligible &&
-        latest.qualification?.allSuccess;
-      if (!stillQualified || latest.baseSha !== verified.baseSha || attempt === 1) {
+      if (!canRetryMergeAfterBaseRace(verified, latest) || attempt === 1) {
         // A changed base requires a fresh signed Dependabot commit and a new
         // exact-head CI/security/docs qualification; never merge the old head.
         await requestDependabotRefresh(ownerApi, latest, config);

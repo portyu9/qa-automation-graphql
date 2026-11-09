@@ -778,6 +778,22 @@ export async function reconcileIndependently(pulls, processor) {
   return { results, failures };
 }
 
+export function shouldSweepDependabotPulls(eventName, { headBranch, conclusion, workflowName, config }) {
+  if (eventName === 'schedule' || eventName === 'push') return true;
+  return (
+    eventName === 'workflow_run' &&
+    headBranch === config.baseBranch &&
+    conclusion === 'success' &&
+    config.requiredWorkflows.some((required) => required.workflow === workflowName)
+  );
+}
+
+export function isConcurrentBaseModification(error) {
+  return /^GitHub API PUT https:\/\/api\.github\.com\/repos\/[^/\s]+\/[^/\s]+\/pulls\/[1-9]\d*\/merge failed \(405\): Base branch was modified\.?$/u.test(
+    String(error?.message || ''),
+  );
+}
+
 export function eventPullNumber(event, eventName) {
   if (eventName === 'pull_request_target' || eventName === 'pull_request') {
     return event.pull_request?.number || null;
@@ -1399,13 +1415,53 @@ async function maybeMerge(api, ownerApi, assessment, config, allowMerge) {
     throw new Error('exact-head owner approval disappeared before merge');
   }
 
-  const result = await api.put(`/pulls/${refreshed.pull.number}/merge`, {
-    merge_method: config.mergeMethod,
-    sha: refreshed.pull.head.sha,
-    commit_title: refreshed.pull.title,
-    commit_message:
-      'Qualified and merged by dependency governance after provenance, semantic-scope, exact-base, and all configured qualification gates.',
-  });
+  // GitHub can reject an otherwise-qualified merge if another PR advances main
+  // between our exact-base proof and the merge transaction. Revalidate every
+  // proof after this specific race; never waive the signed-head or owner gates.
+  let verified = refreshed;
+  let result;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      result = await api.put(`/pulls/${verified.pull.number}/merge`, {
+        merge_method: config.mergeMethod,
+        sha: verified.pull.head.sha,
+        commit_title: verified.pull.title,
+        commit_message:
+          'Qualified and merged by dependency governance after provenance, semantic-scope, exact-base, and all configured qualification gates.',
+      });
+      break;
+    } catch (error) {
+      if (!isConcurrentBaseModification(error)) throw error;
+      const latest = await assessPull(api, assessment.pull.number, config, {
+        includeQualification: true,
+      });
+      const stillQualified =
+        latest.pull.state === 'open' &&
+        latest.pull.head.sha === verified.pull.head.sha &&
+        latest.provenance.eligible &&
+        latest.metadataAssessment.eligible &&
+        latest.semantic.eligible &&
+        latest.qualification?.allSuccess;
+      if (!stillQualified || latest.baseSha !== verified.baseSha || attempt === 1) {
+        // A changed base requires a fresh signed Dependabot commit and a new
+        // exact-head CI/security/docs qualification; never merge the old head.
+        await requestDependabotRefresh(ownerApi, latest, config);
+        console.warn(
+          `PR #${latest.pull.number}: concurrent base modification; merge deferred until exact-base and all qualification proofs are restored.`,
+        );
+        return { merged: false, refreshed: latest };
+      }
+      if (
+        !(await hasExactOwnerApproval(ownerApi, latest.pull.number, latest.pull.head.sha, config))
+      ) {
+        throw new Error('exact-head owner approval disappeared during merge retry');
+      }
+      console.warn(
+        `PR #${latest.pull.number}: transient merge race with unchanged base; retrying once after full requalification.`,
+      );
+      verified = latest;
+    }
+  }
 
   const dispatches = [];
   if (result?.merged === true) {
@@ -1429,7 +1485,7 @@ async function maybeMerge(api, ownerApi, assessment, config, allowMerge) {
       }
     }
   }
-  return { merged: result?.merged === true, result, refreshed, dispatches };
+  return { merged: result?.merged === true, result, refreshed: verified, dispatches };
 }
 
 async function processPull(
@@ -1502,7 +1558,14 @@ async function main() {
     : null;
   const allowMerge = process.env.ALLOW_MERGE === 'true';
 
-  if (eventName === 'schedule' || eventName === 'push') {
+  if (
+    shouldSweepDependabotPulls(eventName, {
+      headBranch: process.env.WORKFLOW_RUN_HEAD_BRANCH,
+      conclusion: process.env.WORKFLOW_RUN_CONCLUSION,
+      workflowName: process.env.WORKFLOW_RUN_NAME,
+      config,
+    })
+  ) {
     const pulls = await api.paginate('/pulls?state=open');
     const dependabotPulls = pulls.filter(
       (pull) => pull.user?.login === config.botLogin && pull.user?.id === config.botUserId,

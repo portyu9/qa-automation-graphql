@@ -27,7 +27,7 @@
     "manifest:refresh": "npm run build && node dist/scripts/operation-manifest.js --write"
   },
   "dependencies": {
-    "graphql": "17.0.2"
+    "graphql": "17.1.0"
   },
   "devDependencies": {
     "@types/node": "24.19.2",

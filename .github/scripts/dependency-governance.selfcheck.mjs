@@ -715,7 +715,7 @@ test('unauthorized, policy and rate-limit GET failures never retry', async () =>
   for (const status of [400, 401, 403, 404, 409, 422, 429]) {
     const mock = mockGithubApiFetch([status]);
     try {
-      await assert.rejects(testApi().get('/pulls/17'), new RegExp(`failed \\\(\${status}\\\)`));
+      await assert.rejects(testApi().get('/pulls/17'), (error) => error.message.includes(`failed (${status})`));
       assert.equal(mock.calls.length, 1);
     } finally {
       mock.restore();

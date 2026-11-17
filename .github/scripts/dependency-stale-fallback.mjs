@@ -265,7 +265,8 @@ export async function runStaleDockerFallback({ api, ownerApi, assessment, config
         'Signed source parent: ' + sourceBase, 'Signed Dockerfile blob: ' + signed.sha,
         'Accepted main at initial projection: ' + current.baseSha,
         'Recovery commit is controller-authored; it is NOT a Dependabot-signed commit.',
-        'Required: fresh exact-head CI, extended, security, docs, owner review and main verification.',
+        'Required: fresh exact-head ' + config.requiredWorkflows.map((gate) => gate.gate).join(', ')
+          + ', owner review and accepted-main verification.',
       ].join('\n\n'),
     });
     if (!Number.isSafeInteger(pr?.number)) fail('recovery PR publication has no verifiable number');

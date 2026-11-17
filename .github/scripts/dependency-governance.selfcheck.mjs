@@ -221,6 +221,14 @@ test('Docker update must be same allowlisted image, digest pinned, same platform
   const major = 'FROM node:26.0.0-alpine3.24@sha256:' + 'b'.repeat(64) + '\nRUN echo safe\n';
   const platform = 'FROM node:24.20.1-alpine3.25@sha256:' + 'b'.repeat(64) + '\nRUN echo safe\n';
   assert.equal(validateDockerSemanticChange(base, patch, meta('node'), ['node']).eligible, true);
+  const malformed = patch.replace(
+    'FROM node:24.20.1-alpine3.24@sha256:' + 'b'.repeat(64),
+    'FROM node-this-is-not-a-versioned-reference',
+  );
+  const malformedResult = validateDockerSemanticChange(base, malformed, meta('node'), ['node']);
+  assert.equal(malformedResult.eligible, false, 'unparseable FROM is never eligible');
+  assert.match(malformedResult.reasons.join('; '), /unparseable Docker FROM image/);
+
   assert.equal(
     validateDockerSemanticChange(base, major, meta('node', 'version-update:semver-major'), ['node'])
       .eligible,
